@@ -1,0 +1,19 @@
+# Arduino build files / Arduinoビルド生成物
+build/
+*.hex
+*.elf
+*.eep
+*.map
+*.o
+*.d
+
+# OS/editor files / OS・エディタ生成物
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Temporary files / 一時ファイル
+*.tmp
+*.bak
