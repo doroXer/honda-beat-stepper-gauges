@@ -46,6 +46,20 @@ Only the latest formal version is included. Experimental and intermediate versio
 
 正式版の最新版のみ収録します。実験版・途中版は開発用Privateリポジトリに残します。
 
+## Key-off power hold requirement / キーOFF後の電源保持要件
+
+The tachometer and speedometer control circuits must not lose power immediately when the ignition key is switched OFF. The controller and motor-driver power supply must be held for a short period after key-off so that the software can detect the key-off condition and complete its required shutdown / needle-position handling. The key-off signal must therefore be detected independently of the held power rail.
+
+タコメーターおよびスピードメーターの制御回路は、イグニッションキーをOFFにした瞬間に電源が失われない構成としてください。ソフトウェアがキーOFFを検出し、必要な終了処理・針位置処理を完了できるよう、キーOFF後も短時間、マイコンおよびモータードライバへの電源を保持する必要があります。そのため、キーOFF検出信号は電源保持される系統とは独立して検出できる構成が必要です。
+
+A capacitor, EDLC, or equivalent hold-up circuit may be used. The required hold time depends on the actual circuit, motor drive, and software version, so it must be verified on the completed hardware. Do not assume that removing ignition power and controller power at the same instant is acceptable.
+
+電源保持にはコンデンサ、EDLC、または同等の保持回路を使用できます。必要な保持時間は実際の回路、モーター駆動条件、ソフトウェアバージョンによって異なるため、完成したハードウェアで確認してください。イグニッション電源と制御回路電源を同時に遮断する構成は前提としていません。
+
+See `docs/hardware.md` for the hardware-side implementation notes.
+
+ハードウェア側の実装上の注意は `docs/hardware.md` を参照してください。
+
 ## Repository structure / 構成
 
 ```text
