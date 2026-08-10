@@ -411,6 +411,10 @@ public:
     return !isAtTarget();
   }
 
+  // Clears only the current motion state while preserving the actual
+  // stored motor coordinate. This is used before a forced retarget such
+  // as key-OFF return, so velocity and fractional steps from the previous
+  // direction cannot be mistaken for target arrival.
   void stopMotion()
   {
     motorVelocity_ = 0.0f;
@@ -423,6 +427,8 @@ public:
     }
   }
 
+  // Immediately cancels a key-OFF return and holds the actual stored
+  // motor coordinate. Used only for key re-entry while STBY is active.
   void holdCurrentPosition()
   {
     targetPosition_ = currentPosition_;
@@ -592,11 +598,24 @@ private:
 
     const PhaseValue phase = PHASE_TABLE[phaseIndex];
 
-    applySignedPhase(PIN_A_POS, PIN_A_NEG, phase.phaseA, pwmMax);
-    applySignedPhase(PIN_B_POS, PIN_B_NEG, phase.phaseB, pwmMax);
+    applySignedPhase(
+        PIN_A_POS,
+        PIN_A_NEG,
+        phase.phaseA,
+        pwmMax);
+
+    applySignedPhase(
+        PIN_B_POS,
+        PIN_B_NEG,
+        phase.phaseB,
+        pwmMax);
   }
 
-  void applySignedPhase(uint8_t pinPositive, uint8_t pinNegative, int16_t signedAmplitude, uint8_t pwmMax)
+  void applySignedPhase(
+      uint8_t pinPositive,
+      uint8_t pinNegative,
+      int16_t signedAmplitude,
+      uint8_t pwmMax)
   {
     int16_t magnitude = abs(signedAmplitude);
 
@@ -604,7 +623,8 @@ private:
       magnitude = 255;
     }
 
-    uint16_t scaled = ((uint16_t)magnitude * (uint16_t)pwmMax) / 255U;
+    uint16_t scaled =
+        ((uint16_t)magnitude * (uint16_t)pwmMax) / 255U;
 
     if (signedAmplitude > 0) {
       analogWrite(pinPositive, (uint8_t)scaled);
@@ -623,6 +643,10 @@ private:
 
 X27QuarterStep tachMotor;
 
+// ============================================================
+// Gauge-state management
+// ============================================================
+
 enum class GaugeState : uint8_t {
   DriverOff,
   Starting,
@@ -632,30 +656,51 @@ enum class GaugeState : uint8_t {
 };
 
 GaugeState gaugeState = GaugeState::DriverOff;
+
 unsigned long zeroHoldStartMs = 0UL;
 
 bool lastConfirmedKeyOn = false;
 bool keyOnDebounced = false;
 bool lastRawKeyOn = false;
 unsigned long keyStateChangedMs = 0UL;
+
 const unsigned long KEY_DEBOUNCE_MS = 50UL;
+
+// ============================================================
+// Tach pulse acquisition
+// ============================================================
 
 volatile unsigned long latestPulseIntervalUs = 0UL;
 volatile unsigned long lastPulseUs = 0UL;
 volatile bool newPulseAvailable = false;
+
 unsigned long lastAcceptedPulseUs = 0UL;
+
+// ============================================================
+// v1 upper-control state
+// ============================================================
 
 long rawTachValue = 0L;
 long filteredDisplayValue = 0L;
+
+// Position path changed to float so quarter-step targets survive until
+// the dedicated motor-layer boundary.
 float rawTargetStepFromDisplay = 0.0f;
 float stabilizedTargetStep = 0.0f;
 float targetStepFromDisplay = 0.0f;
+
 float virtualNeedleStep = 0.0f;
 float virtualNeedleVelocity = 0.0f;
+
 unsigned long lastControlUpdateUs = 0UL;
+
 byte engineRunConfirmCount = 0;
 bool engineRunningConfirmed = false;
 bool displayFilterInitialized = false;
+
+// ============================================================
+// Arduino setup / loop
+// ============================================================
 
 void setup()
 {
@@ -664,6 +709,7 @@ void setup()
   pinMode(PIN_LED, OUTPUT);
 
   digitalWrite(PIN_LED, HIGH);
+
   tachMotor.begin();
 
   lastRawKeyOn = readKeyOnRaw();
@@ -671,7 +717,10 @@ void setup()
   lastConfirmedKeyOn = keyOnDebounced;
   keyStateChangedMs = millis();
 
-  attachInterrupt(digitalPinToInterrupt(PIN_TACH_INPUT), onTachPulse, RISING);
+  attachInterrupt(
+      digitalPinToInterrupt(PIN_TACH_INPUT),
+      onTachPulse,
+      RISING);
 
   if (isKeyOnConfirmedAtStartup()) {
     startGaugeFromDriverOff();
@@ -689,14 +738,18 @@ void loop()
 
   switch (gaugeState) {
     case GaugeState::DriverOff:
-      if (keyOn) startGaugeFromDriverOff();
+      if (keyOn) {
+        startGaugeFromDriverOff();
+      }
       break;
 
     case GaugeState::Starting:
       break;
 
     case GaugeState::Running:
-      if (!keyOn) beginKeyOffReturn();
+      if (!keyOn) {
+        beginKeyOffReturn();
+      }
       else {
         tachMotor.update();
         runV1UpperControl();
@@ -704,9 +757,12 @@ void loop()
       break;
 
     case GaugeState::ReturningToZero:
-      if (keyOn) resumeRunningDuringKeyOffReturn();
+      if (keyOn) {
+        resumeRunningDuringKeyOffReturn();
+      }
       else {
         tachMotor.update();
+
         if (tachMotor.isAtTarget()) {
           zeroHoldStartMs = millis();
           gaugeState = GaugeState::ZeroHold;
@@ -715,8 +771,12 @@ void loop()
       break;
 
     case GaugeState::ZeroHold:
-      if (keyOn) resumeRunningDuringKeyOffReturn();
-      else if ((unsigned long)(millis() - zeroHoldStartMs) >= KEYOFF_ZERO_HOLD_MS) {
+      if (keyOn) {
+        resumeRunningDuringKeyOffReturn();
+      }
+      else if ((unsigned long)(millis() - zeroHoldStartMs) >=
+               KEYOFF_ZERO_HOLD_MS) {
+
         tachMotor.disable();
         digitalWrite(PIN_LED, HIGH);
         gaugeState = GaugeState::DriverOff;
@@ -726,6 +786,10 @@ void loop()
 
   lastConfirmedKeyOn = keyOn;
 }
+
+// ============================================================
+// Key handling
+// ============================================================
 
 bool readKeyOnRaw()
 {
@@ -742,7 +806,9 @@ bool updateAndReadKeyOn()
     keyStateChangedMs = nowMs;
   }
 
-  if ((unsigned long)(nowMs - keyStateChangedMs) >= KEY_DEBOUNCE_MS) {
+  if ((unsigned long)(nowMs - keyStateChangedMs) >=
+      KEY_DEBOUNCE_MS) {
+
     keyOnDebounced = rawKeyOn;
   }
 
@@ -752,45 +818,82 @@ bool updateAndReadKeyOn()
 bool isKeyOnConfirmedAtStartup()
 {
   for (int i = 0; i < STARTUP_KEY_CHECK_COUNT; i++) {
-    if (!readKeyOnRaw()) return false;
+    if (!readKeyOnRaw()) {
+      return false;
+    }
+
     delay(STARTUP_KEY_CHECK_INTERVAL_MS);
   }
+
   return true;
 }
+
+// ============================================================
+// Gauge startup / key-off transitions
+// ============================================================
 
 void startGaugeFromDriverOff()
 {
   gaugeState = GaugeState::Starting;
+
   digitalWrite(PIN_LED, LOW);
+
   tachMotor.enable();
   delay(STARTUP_KEY_SETTLE_DELAY_MS);
+
   forceZeroToStop();
 
-  if (ENABLE_OPENING_DEMO) openingDemo();
-  if (FORCE_ZERO_AFTER_OPENING) forceZeroToStop();
+  if (ENABLE_OPENING_DEMO) {
+    openingDemo();
+  }
+
+  if (FORCE_ZERO_AFTER_OPENING) {
+    forceZeroToStop();
+  }
 
   resetDisplayState();
+
   gaugeState = GaugeState::Running;
 }
 
 void beginKeyOffReturn()
 {
-  const float currentLogicalPosition = motorPositionToLogicalStep(tachMotor.getCurrentPosition());
+  const float currentLogicalPosition =
+      motorPositionToLogicalStep(
+          tachMotor.getCurrentPosition());
+
   resetDisplayStateAtPosition(currentLogicalPosition);
+
+  // Key-OFF may occur while the pointer is still moving upward.
+  // Preserve the current coordinate, but discard the previous velocity
+  // and fractional-step remainder before commanding the return to zero.
   tachMotor.stopMotion();
   commandMotorPosition(0.0f);
+
   digitalWrite(PIN_LED, HIGH);
   gaugeState = GaugeState::ReturningToZero;
 }
 
 void resumeRunningDuringKeyOffReturn()
 {
+  // Important for re-entry:
+  // cancel the zero-return target immediately and hold the actual position
+  // before copying it back into the v1 upper-control state.
   tachMotor.holdCurrentPosition();
-  const float currentLogicalPosition = motorPositionToLogicalStep(tachMotor.getCurrentPosition());
+
+  const float currentLogicalPosition =
+      motorPositionToLogicalStep(
+          tachMotor.getCurrentPosition());
+
   resetDisplayStateAtPosition(currentLogicalPosition);
+
   digitalWrite(PIN_LED, LOW);
   gaugeState = GaugeState::Running;
 }
+
+// ============================================================
+// v1 upper control
+// ============================================================
 
 void runV1UpperControl()
 {
@@ -799,23 +902,35 @@ void runV1UpperControl()
   bool hasNewPulse = false;
 
   noInterrupts();
+
   if (newPulseAvailable) {
     latestInterval = latestPulseIntervalUs;
     latestPulseTimestamp = lastPulseUs;
     newPulseAvailable = false;
     hasNewPulse = true;
   }
+
   interrupts();
 
-  if (hasNewPulse && isValidTachInterval(latestInterval)) {
-    lastAcceptedPulseUs = latestPulseTimestamp;
-    updateRawValueFromPulseInterval(latestInterval);
+  if (hasNewPulse) {
+    if (isValidTachInterval(latestInterval)) {
+      lastAcceptedPulseUs = latestPulseTimestamp;
 
-    const bool runningNow = updateEngineRunConfirmation(latestInterval);
-    if (runningNow) {
-      if (!displayFilterInitialized) initializeDisplayFilterFromRaw();
-      else updateDisplayFilter();
-      updateTargetStepFromDisplay();
+      updateRawValueFromPulseInterval(latestInterval);
+
+      const bool runningNow =
+          updateEngineRunConfirmation(latestInterval);
+
+      if (runningNow) {
+        if (!displayFilterInitialized) {
+          initializeDisplayFilterFromRaw();
+        }
+        else {
+          updateDisplayFilter();
+        }
+
+        updateTargetStepFromDisplay();
+      }
     }
   }
 
@@ -831,14 +946,28 @@ bool updateEngineRunConfirmation(unsigned long intervalMicros)
     return false;
   }
 
-  if (engineRunConfirmCount < ENGINE_RUN_CONFIRM_COUNT) engineRunConfirmCount++;
-  if (engineRunConfirmCount >= ENGINE_RUN_CONFIRM_COUNT) engineRunningConfirmed = true;
+  if (engineRunConfirmCount < ENGINE_RUN_CONFIRM_COUNT) {
+    engineRunConfirmCount++;
+  }
+
+  if (engineRunConfirmCount >= ENGINE_RUN_CONFIRM_COUNT) {
+    engineRunningConfirmed = true;
+  }
+
   return engineRunningConfirmed;
 }
 
 bool isValidTachInterval(unsigned long intervalMicros)
 {
-  return intervalMicros >= MIN_VALID_INTERVAL_US && intervalMicros <= MAX_VALID_INTERVAL_US;
+  if (intervalMicros < MIN_VALID_INTERVAL_US) {
+    return false;
+  }
+
+  if (intervalMicros > MAX_VALID_INTERVAL_US) {
+    return false;
+  }
+
+  return true;
 }
 
 void initializeDisplayFilterFromRaw()
@@ -849,11 +978,21 @@ void initializeDisplayFilterFromRaw()
 
 void updateRawValueFromPulseInterval(unsigned long intervalMicros)
 {
-  if (intervalMicros == 0UL) return;
+  if (intervalMicros == 0UL) {
+    return;
+  }
 
-  rawTachValue = STEP_CONVERSION_NUMERATOR / (long)intervalMicros;
-  if (rawTachValue < 0L) rawTachValue = 0L;
-  if (rawTachValue > MOTOR_STEPS + STEP_OFFSET) rawTachValue = MOTOR_STEPS + STEP_OFFSET;
+  rawTachValue =
+      STEP_CONVERSION_NUMERATOR /
+      (long)intervalMicros;
+
+  if (rawTachValue < 0L) {
+    rawTachValue = 0L;
+  }
+
+  if (rawTachValue > MOTOR_STEPS + STEP_OFFSET) {
+    rawTachValue = MOTOR_STEPS + STEP_OFFSET;
+  }
 }
 
 void updateDisplayFilter()
@@ -861,14 +1000,23 @@ void updateDisplayFilter()
   filteredDisplayValue =
       ((long)DISPLAY_FILTER_OLD * filteredDisplayValue +
        (long)DISPLAY_FILTER_NEW * rawTachValue) /
-      ((long)DISPLAY_FILTER_OLD + (long)DISPLAY_FILTER_NEW);
+      ((long)DISPLAY_FILTER_OLD +
+       (long)DISPLAY_FILTER_NEW);
 }
 
 void updateTargetStepFromDisplay()
 {
-  long logicalStep = filteredDisplayValue - STEP_OFFSET;
-  if (logicalStep < 0L) logicalStep = 0L;
-  if (logicalStep > MOTOR_STEPS) logicalStep = MOTOR_STEPS;
+  long logicalStep =
+      filteredDisplayValue - STEP_OFFSET;
+
+  if (logicalStep < 0L) {
+    logicalStep = 0L;
+  }
+
+  if (logicalStep > MOTOR_STEPS) {
+    logicalStep = MOTOR_STEPS;
+  }
+
   rawTargetStepFromDisplay = (float)logicalStep;
 }
 
@@ -879,70 +1027,139 @@ void updateVirtualNeedleControl(unsigned long nowMicros)
     return;
   }
 
-  unsigned long elapsedUs = nowMicros - lastControlUpdateUs;
-  if (elapsedUs < CONTROL_UPDATE_INTERVAL_US) return;
+  unsigned long elapsedUs =
+      nowMicros - lastControlUpdateUs;
+
+  if (elapsedUs < CONTROL_UPDATE_INTERVAL_US) {
+    return;
+  }
+
   lastControlUpdateUs = nowMicros;
 
-  float dtSec = (float)elapsedUs / 1000000.0f;
-  if (dtSec > 0.5f) dtSec = 0.5f;
+  float dtSec =
+      (float)elapsedUs / 1000000.0f;
 
-  const float targetDelta = rawTargetStepFromDisplay - stabilizedTargetStep;
+  if (dtSec > 0.5f) {
+    dtSec = 0.5f;
+  }
+
+  // v1 target-step slew-rate limiting
+  const float targetDelta =
+      rawTargetStepFromDisplay - stabilizedTargetStep;
+
   const float maxTargetDelta =
-      (targetDelta >= 0.0f ? TARGET_STEP_MAX_UP_PER_SEC : TARGET_STEP_MAX_DOWN_PER_SEC) * dtSec;
+      (targetDelta >= 0.0f ?
+       TARGET_STEP_MAX_UP_PER_SEC :
+       TARGET_STEP_MAX_DOWN_PER_SEC) * dtSec;
 
-  if (absFloat(targetDelta) <= maxTargetDelta) stabilizedTargetStep = rawTargetStepFromDisplay;
-  else stabilizedTargetStep += targetDelta > 0.0f ? maxTargetDelta : -maxTargetDelta;
+  if (absFloat(targetDelta) <= maxTargetDelta) {
+    stabilizedTargetStep = rawTargetStepFromDisplay;
+  }
+  else {
+    stabilizedTargetStep +=
+        targetDelta > 0.0f ?
+        maxTargetDelta :
+        -maxTargetDelta;
+  }
 
-  stabilizedTargetStep = constrainFloat(stabilizedTargetStep, 0.0f, (float)MOTOR_STEPS);
+  stabilizedTargetStep =
+      constrainFloat(
+          stabilizedTargetStep,
+          0.0f,
+          (float)MOTOR_STEPS);
+
   targetStepFromDisplay = stabilizedTargetStep;
 
-  const float error = targetStepFromDisplay - virtualNeedleStep;
+  const float error =
+      targetStepFromDisplay - virtualNeedleStep;
 
   if (absFloat(error) <= VIRTUAL_STOP_BAND_STEP) {
     virtualNeedleStep = targetStepFromDisplay;
     virtualNeedleVelocity = 0.0f;
+
     commandMotorPosition(virtualNeedleStep);
     return;
   }
 
-  const float desiredDirection = error > 0.0f ? 1.0f : -1.0f;
-  const float maxVelocity =
-      desiredDirection > 0.0f ? VIRTUAL_MAX_VEL_UP_STEP_PER_SEC : VIRTUAL_MAX_VEL_DOWN_STEP_PER_SEC;
-  const float acceleration =
-      desiredDirection > 0.0f ? VIRTUAL_ACCEL_UP_STEP_PER_SEC2 : VIRTUAL_ACCEL_DOWN_STEP_PER_SEC2;
-  const float velocityAbs = absFloat(virtualNeedleVelocity);
-  const float stoppingDistance = (velocityAbs * velocityAbs) / (2.0f * acceleration);
+  const float desiredDirection =
+      error > 0.0f ? 1.0f : -1.0f;
 
-  if ((virtualNeedleVelocity > 0.0f && desiredDirection < 0.0f) ||
-      (virtualNeedleVelocity < 0.0f && desiredDirection > 0.0f)) {
+  const float maxVelocity =
+      desiredDirection > 0.0f ?
+      VIRTUAL_MAX_VEL_UP_STEP_PER_SEC :
+      VIRTUAL_MAX_VEL_DOWN_STEP_PER_SEC;
+
+  const float acceleration =
+      desiredDirection > 0.0f ?
+      VIRTUAL_ACCEL_UP_STEP_PER_SEC2 :
+      VIRTUAL_ACCEL_DOWN_STEP_PER_SEC2;
+
+  const float velocityAbs =
+      absFloat(virtualNeedleVelocity);
+
+  const float stoppingDistance =
+      (velocityAbs * velocityAbs) /
+      (2.0f * acceleration);
+
+  if ((virtualNeedleVelocity > 0.0f &&
+       desiredDirection < 0.0f) ||
+      (virtualNeedleVelocity < 0.0f &&
+       desiredDirection > 0.0f)) {
+
     if (virtualNeedleVelocity > 0.0f) {
       virtualNeedleVelocity -= acceleration * dtSec;
-      if (virtualNeedleVelocity < 0.0f) virtualNeedleVelocity = 0.0f;
-    } else {
+
+      if (virtualNeedleVelocity < 0.0f) {
+        virtualNeedleVelocity = 0.0f;
+      }
+    }
+    else {
       virtualNeedleVelocity += acceleration * dtSec;
-      if (virtualNeedleVelocity > 0.0f) virtualNeedleVelocity = 0.0f;
+
+      if (virtualNeedleVelocity > 0.0f) {
+        virtualNeedleVelocity = 0.0f;
+      }
     }
   }
-  else if (absFloat(error) <= stoppingDistance + VIRTUAL_STOP_BAND_STEP) {
+  else if (absFloat(error) <=
+           stoppingDistance + VIRTUAL_STOP_BAND_STEP) {
+
     if (virtualNeedleVelocity > 0.0f) {
       virtualNeedleVelocity -= acceleration * dtSec;
-      if (virtualNeedleVelocity < 0.0f) virtualNeedleVelocity = 0.0f;
-    } else if (virtualNeedleVelocity < 0.0f) {
+
+      if (virtualNeedleVelocity < 0.0f) {
+        virtualNeedleVelocity = 0.0f;
+      }
+    }
+    else if (virtualNeedleVelocity < 0.0f) {
       virtualNeedleVelocity += acceleration * dtSec;
-      if (virtualNeedleVelocity > 0.0f) virtualNeedleVelocity = 0.0f;
+
+      if (virtualNeedleVelocity > 0.0f) {
+        virtualNeedleVelocity = 0.0f;
+      }
     }
   }
   else {
-    virtualNeedleVelocity += desiredDirection * acceleration * dtSec;
-    if (virtualNeedleVelocity > maxVelocity) virtualNeedleVelocity = maxVelocity;
-    if (virtualNeedleVelocity < -maxVelocity) virtualNeedleVelocity = -maxVelocity;
+    virtualNeedleVelocity +=
+        desiredDirection * acceleration * dtSec;
+
+    if (virtualNeedleVelocity > maxVelocity) {
+      virtualNeedleVelocity = maxVelocity;
+    }
+
+    if (virtualNeedleVelocity < -maxVelocity) {
+      virtualNeedleVelocity = -maxVelocity;
+    }
   }
 
-  virtualNeedleStep += virtualNeedleVelocity * dtSec;
+  virtualNeedleStep +=
+      virtualNeedleVelocity * dtSec;
+
   if (virtualNeedleStep < 0.0f) {
     virtualNeedleStep = 0.0f;
     virtualNeedleVelocity = 0.0f;
   }
+
   if (virtualNeedleStep > (float)MOTOR_STEPS) {
     virtualNeedleStep = (float)MOTOR_STEPS;
     virtualNeedleVelocity = 0.0f;
@@ -953,15 +1170,27 @@ void updateVirtualNeedleControl(unsigned long nowMicros)
 
 void commandMotorPosition(float logicalStep)
 {
-  tachMotor.setPosition(logicalStepToMotorPosition(logicalStep));
+  tachMotor.setPosition(
+      logicalStepToMotorPosition(logicalStep));
 }
 
 void handleEngineStopZeroReturn()
 {
-  if (!engineRunningConfirmed || lastAcceptedPulseUs == 0UL) return;
+  if (!engineRunningConfirmed) {
+    return;
+  }
+
+  if (lastAcceptedPulseUs == 0UL) {
+    return;
+  }
 
   const unsigned long nowMicros = micros();
-  if ((unsigned long)(nowMicros - lastAcceptedPulseUs) < NO_PULSE_STOP_TIMEOUT_US) return;
+
+  if ((unsigned long)(nowMicros - lastAcceptedPulseUs) <
+      NO_PULSE_STOP_TIMEOUT_US) {
+
+    return;
+  }
 
   engineRunConfirmCount = 0;
   engineRunningConfirmed = false;
@@ -972,7 +1201,14 @@ void handleEngineStopZeroReturn()
   rawTargetStepFromDisplay = 0.0f;
   stabilizedTargetStep = virtualNeedleStep;
   targetStepFromDisplay = virtualNeedleStep;
+
+  // Keep current gauge position when engine pulses stop.
+  // Key OFF is handled separately by GaugeState.
 }
+
+// ============================================================
+// Startup helpers
+// ============================================================
 
 void forceZeroToStop()
 {
@@ -983,10 +1219,12 @@ void openingDemo()
 {
   commandMotorPosition((float)MOTOR_STEPS);
   tachMotor.updateBlocking();
+
   delay(200);
 
   commandMotorPosition(0.0f);
   tachMotor.updateBlocking();
+
   delay(200);
 }
 
@@ -997,16 +1235,24 @@ void resetDisplayState()
 
 void resetDisplayStateAtPosition(float logicalPosition)
 {
-  logicalPosition = constrainFloat(logicalPosition, 0.0f, (float)MOTOR_STEPS);
+  logicalPosition =
+      constrainFloat(
+          logicalPosition,
+          0.0f,
+          (float)MOTOR_STEPS);
 
   rawTachValue = 0L;
   filteredDisplayValue = 0L;
+
   rawTargetStepFromDisplay = logicalPosition;
   stabilizedTargetStep = logicalPosition;
   targetStepFromDisplay = logicalPosition;
+
   virtualNeedleStep = logicalPosition;
   virtualNeedleVelocity = 0.0f;
+
   lastControlUpdateUs = micros();
+
   engineRunConfirmCount = 0;
   engineRunningConfirmed = false;
   displayFilterInitialized = false;
@@ -1018,27 +1264,51 @@ void resetDisplayStateAtPosition(float logicalPosition)
   interrupts();
 
   lastAcceptedPulseUs = 0UL;
+
   commandMotorPosition(logicalPosition);
 }
+
+// ============================================================
+// Tach pulse interrupt
+// ============================================================
 
 void onTachPulse()
 {
   const unsigned long nowMicros = micros();
 
   if (lastPulseUs != 0UL) {
-    latestPulseIntervalUs = nowMicros - lastPulseUs;
+    latestPulseIntervalUs =
+        nowMicros - lastPulseUs;
+
     newPulseAvailable = true;
   }
 
   lastPulseUs = nowMicros;
 }
 
+// ============================================================
+// Small float helpers
+// ============================================================
+
 float constrainFloat(float value, float minValue, float maxValue)
 {
-  if (value < minValue) return minValue;
-  if (value > maxValue) return maxValue;
+  if (value < minValue) {
+    return minValue;
+  }
+
+  if (value > maxValue) {
+    return maxValue;
+  }
+
   return value;
 }
 
-float minFloat(float a, float b) { return a < b ? a : b; }
-float absFloat(float value) { return value < 0.0f ? -value : value; }
+float minFloat(float a, float b)
+{
+  return a < b ? a : b;
+}
+
+float absFloat(float value)
+{
+  return value < 0.0f ? -value : value;
+}
