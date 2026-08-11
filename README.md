@@ -46,6 +46,20 @@ Only the latest formal version is included. Experimental and intermediate versio
 
 正式版の最新版のみ収録します。実験版・途中版は開発用Privateリポジトリに残します。
 
+## Vehicle pulse input conditioning / 車両パルス入力処理
+
+The tachometer and speedometer software expects a conditioned logic-level pulse at the microcontroller input. It does **not** assume that the original vehicle tachometer or speed signal can be connected directly to an Arduino input pin.
+
+タコメーターおよびスピードメーターのソフトウェアは、マイコン入力に**整形済みのロジックレベルパルス**が入力されることを前提としています。車両側のタコ信号またはスピード信号をArduino入力ピンへ直接接続することを前提としていません。
+
+Vehicle signals may exceed the allowable MCU input voltage and may contain negative excursions, transients, ringing, or electrical noise. Appropriate input protection, voltage limiting / level conversion, and waveform shaping must therefore be provided according to the actual signal measured at the installation point.
+
+車両信号はマイコンの許容入力電圧を超える場合があり、負方向の電圧、サージ、リンギング、電気ノイズ等を含む可能性があります。そのため、実際の信号取り出し位置で確認した波形に応じて、入力保護、電圧制限／レベル変換、波形整形を行う必要があります。
+
+The tachometer and speedometer signals do not necessarily have the same electrical characteristics, so a single identical input circuit should not be assumed suitable for both. See `docs/hardware.md` for the hardware-side requirements and design considerations.
+
+タコ信号とスピード信号は電気的特性が同一とは限らないため、両者に同じ入力回路をそのまま使用できるとは限りません。ハードウェア側の要件と設計上の考え方は `docs/hardware.md` を参照してください。
+
 ## Key-off power hold requirement / キーOFF後の電源保持要件
 
 The tachometer and speedometer control circuits must not lose power immediately when the ignition key is switched OFF. The controller and motor-driver power supply must be held for a short period after key-off so that the software can detect the key-off condition and complete its required shutdown / needle-position handling. The key-off signal must therefore be detected independently of the held power rail.
