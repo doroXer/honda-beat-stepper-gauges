@@ -84,6 +84,12 @@ The fuel/coolant implementation uses a single motor-drive task that owns both Sw
 
 燃料計・水温計は、2つのSwitecX25モーターオブジェクトを単一のモーター駆動タスクが管理し、別のロジックタスクが各メーターの目標位置を計算する構成です。
 
+## Calibration / 校正
+
+The conversion constants and ADC-to-angle relationships used by these gauges include project-specific calibration values. See [`calibration.md`](calibration.md) for the tachometer calibration basis, speedometer conversion, and fuel/coolant ADC calibration assumptions.
+
+各メーターの換算定数やADC→角度関係には、本プロジェクト固有の校正値が含まれます。タコメーターの校正根拠、スピードメーターの換算、燃料・水温のADC校正前提は [`calibration.md`](calibration.md) を参照してください。
+
 ## Automotive power and signal caution / 車載電源・信号に関する注意
 
 Do not connect raw automotive-voltage signals directly to Arduino input pins unless the interface circuit has been designed for the expected voltage range, transients, reverse polarity, and noise environment. Provide suitable protection, regulation, filtering, grounding, and fusing for the actual vehicle installation.
