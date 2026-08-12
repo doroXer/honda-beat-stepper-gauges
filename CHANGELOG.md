@@ -41,9 +41,11 @@ This changelog lists only the formal versions selected for the release-oriented 
 
 - Evolved the DRV8833 motor layer to 1/16 microstepping.
 - Retained the established pulse-processing and upper needle-control architecture.
+- Normalized negative phase indices using the v2.1 64-position phase count (`PHASE_COUNT`), keeping phase-table wraparound consistent with the 1/16-microstep implementation.
 
 - DRV8833モーター駆動層を1/16マイクロステップへ発展。
 - 確立したパルス処理・上位針制御アーキテクチャを維持。
+- 負の位相インデックスをv2.1の64位相数（`PHASE_COUNT`）で正規化し、1/16マイクロステップの位相テーブル参照と整合させた。
 
 ### v2.0
 
