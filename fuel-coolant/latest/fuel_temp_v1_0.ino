@@ -83,8 +83,10 @@ const UBaseType_t TASK_PRIORITY_LOGIC = 1;
 SwitecX25 motorTemp(METER_STEPS, 4, 5, 6, 7);
 SwitecX25 motorFuel(METER_STEPS, 8, 9, 10, 11);
 
-// Same acceleration table as the tachometer setting.
-// The commented values are the former tachometer reference values.
+// Slower acceleration table selected during fuel / coolant meter testing.
+// The commented values are earlier reference values retained for comparison.
+// 燃料計・水温計の実機テストで選定した低速側の加速テーブルです。
+// コメント値は比較用に残した以前の参照値です。
 unsigned short meterAccelTable[][2] = {
   { 20, 8000 },  // former reference: 4500
   { 50, 4400 },  // former reference: 2600
@@ -130,6 +132,13 @@ float readFilteredAdc(byte pin, float previousValue) {
 }
 
 unsigned int coolantTempSteps(float tempAdc) {
+  // Installation-specific calibrated ADC-to-angle relationship.
+  // This is not a universal coolant-sensor transfer function; recalibrate if
+  // the sensor, input circuit, ADC reference, supply, wiring, or gauge geometry changes.
+  // 本プロジェクトの実装条件で校正したADC→角度換算です。一般的な水温センサーの
+  // 普遍的な特性式ではないため、センサー、入力回路、ADC基準、電源、配線、
+  // メーター形状を変更した場合は再校正してください。
+
   // Protect log() from zero or negative values caused by wiring faults or ADC noise.
   if (tempAdc < 1.0) tempAdc = 1.0;
 
@@ -140,6 +149,13 @@ unsigned int coolantTempSteps(float tempAdc) {
 }
 
 unsigned int fuelSteps(float fuelAdc) {
+  // Installation-specific calibrated ADC-to-angle relationship.
+  // This is not a universal fuel-sender transfer function; recalibrate if
+  // the sender, input circuit, ADC reference, supply, wiring, or gauge geometry changes.
+  // 本プロジェクトの実装条件で校正したADC→角度換算です。一般的な燃料センダーの
+  // 普遍的な特性式ではないため、センダー、入力回路、ADC基準、電源、配線、
+  // メーター形状を変更した場合は再校正してください。
+
   float angleDeg = -0.1744 * fuelAdc + 115.87;
   angleDeg = clampFloat(angleDeg, 0.0, 115.0);
 
