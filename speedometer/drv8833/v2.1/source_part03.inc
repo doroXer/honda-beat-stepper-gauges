@@ -114,7 +114,7 @@
     phaseIndex %= (int8_t)PHASE_COUNT;
 
     if (phaseIndex < 0) {
-      phaseIndex += 16;
+      phaseIndex += (int8_t)PHASE_COUNT;
     }
 
     const PhaseValue &phase = PHASE_TABLE[phaseIndex];
