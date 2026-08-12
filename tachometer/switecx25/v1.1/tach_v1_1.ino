@@ -1,7 +1,7 @@
 #include <SwitecX25.h>
 
 /*
-  Honda Beat tachometer prototype / tach_v1_1.
+  Honda Beat tachometer / tach_v1_1.
 
   This sketch keeps the startup opening demo and key-off behavior from tach_v0.5_calibrated,
   but rebuilds the normal needle-control path as a new architecture.
@@ -17,7 +17,7 @@
       -> virtual stop band
       -> X27.168 / SwitecX25 motor drive
 
-  ホンダビート タコメーター試作コード / tach_v1_1。
+  ホンダビート タコメーター / tach_v1_1。
 
   起動時のオープニング動作とキーオフ時の動作は tach_v0.5_calibrated を継承し、
   通常表示時の針制御を新構成として再構成します。
@@ -48,11 +48,11 @@ SwitecX25 tachMotor(MOTOR_STEPS, PIN_MOTOR_1, PIN_MOTOR_2, PIN_MOTOR_3, PIN_MOTO
 /*
   SwitecX25 motor acceleration table.
   This is still used by the library as the final motor-drive layer.
-  The new virtual needle layer sits above this and limits the commanded position itself.
+  The virtual needle layer sits above this and limits the commanded position itself.
 
   SwitecX25ライブラリ側の加速テーブルです。
   最終的なモーター駆動層として残します。
-  v1.0では、この上位に仮想針制御層を置き、指令位置そのものを滑らかにします。
+  v1.1では、この上位に仮想針制御層を置き、指令位置そのものを滑らかにします。
 */
 unsigned short tachAccelTable[][2] = {
   { 20, 4000 },
@@ -69,7 +69,7 @@ const byte tachAccelTableSize = sizeof(tachAccelTable) / sizeof(tachAccelTable[0
   v0.5_calibrated converted pulse interval directly to step with:
     step = STEP_CONVERSION_NUMERATOR / intervalMicros - STEP_OFFSET
 
-  v1.0 splits this into:
+  v1.1 separates this into:
     rawTachValue = STEP_CONVERSION_NUMERATOR / intervalMicros
     filteredDisplayValue = displayFilter(rawTachValue)
     targetStep = filteredDisplayValue - STEP_OFFSET
@@ -79,7 +79,7 @@ const byte tachAccelTableSize = sizeof(tachAccelTable) / sizeof(tachAccelTable[0
   raw acquisition, display filtering, and step conversion.
 
   v0.5_calibratedでは、パルス間隔から直接stepへ換算していました。
-  v1.0では、以下のように分離します。
+  v1.1では、以下のように分離します。
     rawTachValue = STEP_CONVERSION_NUMERATOR / intervalMicros
     filteredDisplayValue = displayFilter(rawTachValue)
     targetStep = filteredDisplayValue - STEP_OFFSET
@@ -131,12 +131,13 @@ const float VIRTUAL_STOP_BAND_STEP = 5.0f;
   The filtered raw target is not sent directly to the virtual needle.
   Instead, the target step itself moves toward the raw target with limited speed.
   This follows the same direction as speed_v1 target-slew testing, adjusted for tachometer use.
+  The current v1.1 limits are 100 logical steps/s in both directions.
 
   targetStep追従速度制限です。
 
   フィルタ後のraw targetを仮想針へ直接渡さず、targetStep自体を速度制限つきで
-  raw targetへ追従させます。speed_v1で良好だったtarget slewの考え方を、
-  タコメーター用に上昇30step/s、下降45step/sとして追加します。
+  raw targetへ追従させます。speed_v1で良好だったtarget slewの考え方を
+  タコメーター用に適用し、現行v1.1では上昇・下降とも100 step/sとしています。
 */
 const float TARGET_STEP_MAX_UP_PER_SEC = 100.0f;
 const float TARGET_STEP_MAX_DOWN_PER_SEC = 100.0f;
