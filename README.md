@@ -4,10 +4,6 @@ Honda Beat (PP1) stepper-gauge projects for tachometer, speedometer, fuel gauge,
 
 ホンダ ビート（PP1）のタコメーター、スピードメーター、燃料計、水温計をステッピングモーター化するためのプロジェクトです。
 
-> **Repository status / リポジトリ状態**  
-> This repository is currently private and is being prepared for a future public release.  
-> 現在はPrivateで公開準備中です。内容確認後にPublic化する予定です。
-
 ## doroXer dark
 
 `doroXer dark` is the automotive / embedded-electronics side of doroXer. This repository publishes practical vehicle projects with the implementation details required to reproduce and understand them.
