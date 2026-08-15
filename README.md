@@ -78,17 +78,32 @@ See `docs/hardware.md` for the hardware-side implementation notes.
 
 ```text
 tachometer/
-  switecx25/v1.1/
-  drv8833/v2.0/
-  drv8833/v2.1/
+  switecx25/
+    tach_v1_1/
+      tach_v1_1.ino
+  drv8833/
+    tach_v2_0/
+      tach_v2_0.ino
+    tach_v2_1/
+      tach_v2_1.ino
 speedometer/
-  switecx25/v1.1/
-  drv8833/v2.0/
-  drv8833/v2.1/
+  switecx25/
+    speed_v1_1/
+      speed_v1_1.ino
+  drv8833/
+    speed_v2_0/
+      speed_v2_0.ino
+    speed_v2_1/
+      speed_v2_1.ino
 fuel-coolant/
-  latest/
+  fuel_temp_v1_0/
+    fuel_temp_v1_0.ino
 docs/
 ```
+
+Each Arduino sketch directory uses the same base name as its main `.ino` file, so the sketches can be opened directly in the Arduino IDE.
+
+各Arduinoスケッチは、フォルダ名とメイン`.ino`ファイル名のベース名を一致させており、そのままArduino IDEで開ける構成です。
 
 Version numbers are preserved between the private development repository and this release-oriented repository. The same version number always refers to the same software code.
 
