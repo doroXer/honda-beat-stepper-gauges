@@ -18,7 +18,11 @@ Honda Beat (PP1) stepper-gauge projects for tachometer, speedometer, fuel gauge,
 |---|---|---|
 | v1.1 | X27.168 + SwitecX25 | Stable library-based implementation / ライブラリ駆動の安定版 |
 | v2.0 | X27.168 + DRV8833, 1/4 microstep | Stable microstep baseline / 安定性重視のマイクロステップ基準版 |
-| v2.1 | X27.168 + DRV8833, 1/16 microstep | Smoother microstep evolution / より滑らかな1/16マイクロステップ版 |
+| v2.1 | X27.168 + DRV8833, 1/16 microstep | One software generation with original + tuned parameter configurations / 初期版＋Tuned版を持つ同一ソフト世代 |
+
+v2.1 keeps the original slower parameter set and also publishes a tuned configuration derived from real-vehicle logging, analysis and simulation. The tuned configuration improves tracking and no clear step loss has been observed in the current vehicle test, while the original may appear smoother because of its slower movement. Both are intentionally retained.
+
+v2.1では初期の緩慢なパラメータセットに加え、実車ログ、解析・シミュレーションから導出したTuned構成を公開します。Tuned版は追従性が向上し、現時点で明確な脱調は確認されていません。一方、初期版の緩慢な動きの方が滑らかに感じられる場合があるため、両方を意図的に残します。
 
 v1.0 was an internal development version and is not included in this repository. The public-facing v1 series starts with v1.1.
 
@@ -30,7 +34,15 @@ v1.0は内部開発版のため収録しません。V1系の公開対象はv1.1�
 |---|---|---|
 | v1.1 | X27.168 + SwitecX25 | Stable library-based implementation / ライブラリ駆動の安定版 |
 | v2.0 | X27.168 + DRV8833, 1/4 microstep | Stable microstep baseline / 安定性重視のマイクロステップ基準版 |
-| v2.1 | X27.168 + DRV8833, 1/16 microstep | Smoother microstep evolution / より滑らかな1/16マイクロステップ版 |
+| v2.1 | X27.168 + DRV8833, 1/16 microstep | One software generation with original + tuned 7:1 + tuned 3:1 parameter configurations / 初期版＋Tuned 7:1＋Tuned 3:1を持つ同一ソフト世代 |
+
+The tuned speedometer configurations improve tracking and no clear step loss has been observed in the current vehicle tests. The original is retained because its slower movement may appear smoother. Tuned 7:1 and Tuned 3:1 are also both retained because stronger smoothing and faster filter response are a trade-off rather than a simple upgrade path.
+
+スピードメーターのTuned構成は追従性が向上し、現時点で明確な脱調は確認されていません。初期版は緩慢な動きの方が滑らかに感じられる場合があるため残します。またTuned 7:1とTuned 3:1も、平滑性とフィルタ応答性の一長一短があるため両方を残します。
+
+In the speedometer variant names, `7:1` and `3:1` mean the weighting ratio of **previous filtered value : newest raw value**. They do not mean pulse division, mechanical gearing, or motor-position scaling.
+
+スピードメーターの `7:1` / `3:1` は **旧フィルタ値：新しい生値** の表示フィルタ重み比を意味します。パルス分周、機械減速比、モーター位置倍率ではありません。
 
 v1.0 was an internal development version and is not included in this repository. The public-facing v1 series starts with v1.1.
 
@@ -41,6 +53,16 @@ v1.0は内部開発版のため収録しません。V1系の公開対象はv1.1�
 Only the latest formal version is included. Experimental and intermediate versions remain in the private development repository.
 
 正式版の最新版のみ収録します。実験版・途中版は開発用Privateリポジトリに残します。
+
+## Version and parameter-variant policy / バージョンとパラメータvariantの方針
+
+Version numbers represent meaningful software-architecture or implementation changes. Parameter-only alternatives inside the same architecture are maintained as `variants/` under the same version instead of incrementing the version number.
+
+バージョン番号は、ソフトウェア構造や実装に意味のある変更がある場合に使用します。同じ制御構造でパラメータだけが異なる場合はバージョン番号を上げず、同一バージョン内の `variants/` として管理します。
+
+This is why the current tuned tachometer and speedometer configurations remain v2.1 rather than being renamed v2.2.
+
+今回のタコ／スピードのTuned構成も、コード構造の新規性ではなくパラメータ差であるためv2.2とはせずv2.1内に残します。
 
 ## Vehicle pulse input conditioning / 車両パルス入力処理
 
@@ -62,9 +84,9 @@ The tachometer and speedometer control circuits must not lose power immediately 
 
 タコメーターおよびスピードメーターの制御回路は、イグニッションキーをOFFにした瞬間に電源が失われない構成としてください。ソフトウェアがキーOFFを検出し、必要な終了処理・針位置処理を完了できるよう、キーOFF後も短時間、マイコンおよびモータードライバへの電源を保持する必要があります。そのため、キーOFF検出信号は電源保持される系統とは独立して検出できる構成が必要です。
 
-A capacitor, EDLC, or equivalent hold-up circuit may be used. The required hold time depends on the actual circuit, motor drive, and software version, so it must be verified on the completed hardware. Do not assume that removing ignition power and controller power at the same instant is acceptable.
+A capacitor, EDLC, or equivalent hold-up circuit may be used. The required hold time depends on the actual circuit, motor drive, and software version, so it must be verified on the completed hardware.
 
-電源保持にはコンデンサ、EDLC、または同等の保持回路を使用できます。必要な保持時間は実際の回路、モーター駆動条件、ソフトウェアバージョンによって異なるため、完成したハードウェアで確認してください。イグニッション電源と制御回路電源を同時に遮断する構成は前提としていません。
+電源保持にはコンデンサ、EDLC、または同等の保持回路を使用できます。必要な保持時間は実際の回路、モーター駆動条件、ソフトウェアバージョンによって異なるため、完成したハードウェアで確認してください。
 
 See `docs/hardware.md` for the hardware-side implementation notes.
 
@@ -82,6 +104,11 @@ tachometer/
       tach_v2_0.ino
     tach_v2_1/
       tach_v2_1.ino
+      README.md
+      variants/
+        README.md
+        tach_v2_1_tuned/
+          tach_v2_1_tuned.ino
 speedometer/
   switecx25/
     speed_v1_1/
@@ -91,6 +118,13 @@ speedometer/
       speed_v2_0.ino
     speed_v2_1/
       speed_v2_1.ino
+      README.md
+      variants/
+        README.md
+        speed_v2_1_tuned_7to1/
+          speed_v2_1_tuned_7to1.ino
+        speed_v2_1_tuned_3to1/
+          speed_v2_1_tuned_3to1.ino
 fuel-coolant/
   fuel_temp_v1_0/
     fuel_temp_v1_0.ino
@@ -101,15 +135,15 @@ Each Arduino sketch directory uses the same base name as its main `.ino` file, s
 
 各Arduinoスケッチは、フォルダ名とメイン`.ino`ファイル名のベース名を一致させており、そのままArduino IDEで開ける構成です。
 
-Version numbers are preserved between the private development repository and this release-oriented repository. The same version number always refers to the same software code.
+Version numbers and maintained parameter configurations are kept consistent between the private development repository and this release-oriented repository.
 
-Private開発リポジトリと本リポジトリでバージョン番号は共通です。同一バージョン番号は同一のソフトウェアコードを指します。
+Private開発リポジトリと本リポジトリで、バージョン番号と維持対象のパラメータ構成を対応させます。
 
 ## Development and release policy / 開発・公開方針
 
-The private `honda-beat-arduino-projects` repository is the development archive and contains experiments, debug builds, rejected approaches, and formal versions. This repository contains only selected formal versions reorganized for users.
+The private `honda-beat-arduino-projects` repository is the development archive and contains logging tools, analysis records, simulation-derived tests, debug builds, rejected approaches, and maintained versions. This repository contains only the selected usable configurations and documentation needed by users.
 
-Privateの `honda-beat-arduino-projects` は開発母艦で、実験、デバッグ版、不採用案、正式版を保持します。本リポジトリには、その中から選定した正式版だけを利用者向けに再整理して収録します。
+Privateの `honda-beat-arduino-projects` は開発母艦で、ログ取得、解析記録、シミュレーション由来のテスト、デバッグ版、不採用案、維持版を保持します。本リポジトリには、その中から選定した利用可能な構成と利用者向け説明だけを整理して収録します。
 
 ## Safety and disclaimer / 安全上の注意・免責
 
