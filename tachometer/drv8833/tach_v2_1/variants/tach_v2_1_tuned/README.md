@@ -29,9 +29,21 @@ The upstream pulse-by-pulse `7:1` IIR suppresses short-period pulse variation, a
 
 上流のパルス毎 `7:1` IIRで短周期のパルスばらつきを抑え、その後のTARGET層で表示したい針軌跡を作ります。代表的な実車Rawログ解析では、TARGET軌跡の最大速度は約 `400–425 logical step/s`、最大加速度は約 `2900 logical step/s²` でした。
 
-With the v2.1 motor-position conversion ratio `32/3`, this corresponds to approximately `4533 microstep/s` and `30933 microstep/s²`. The adopted `4800 / 32000` motor values therefore slightly cover the motion capability already present in the TARGET trajectory.
+### Representative behavior from the vehicle log / 実車ログ上の代表挙動
 
-v2.1のMotor位置換算比 `32/3` で換算すると約 `4533 microstep/s`、`30933 microstep/s²` に相当します。このため `4800 / 32000` は、TARGET軌跡自体が持つ運動能力をわずかに上回る値として採用しています。
+![Representative rapid RPM rise](representative_rapid_rise.svg)
+
+This figure uses the representative rapid-RPM-rise section of the actual vehicle raw pulse log. `S` marks Stabilized target points and `V` marks Virtual needle points. The `V` markers are shifted by +15 ms horizontally **for readability only**; the control timing itself is unchanged. The Physical needle trace is a replay/simulation of the v2.1 motor model driven by the real raw-log segment, not a direct needle-position sensor measurement.
+
+この図は、実車Rawパルスログの代表急回転上昇区間を入力として作成しています。`S` はStabilized target、`V` はVirtual needleです。`V` は識別性のため表示上のみ横方向へ +15 msずらしており、実際の制御時刻は変更していません。Physical needle軌跡は、実車Rawログを入力としてv2.1のMotorモデルを再生したシミュレーション値であり、針位置センサーによる直接実測値ではありません。
+
+The important point is that the pulse-derived input remains visibly irregular, while IIR and TARGET processing already create a much smoother display trajectory. The downstream motor therefore does not need to be used as another strong smoothing layer.
+
+重要なのは、パルス由来の入力には明確なばらつきがある一方、IIRとTARGETを通過した段階では表示軌跡がかなり滑らかになっていることです。そのため、下流Motorをさらに強い平滑化層として使うのではなく、上流で作った軌跡を余計に鈍らせず再現する方針としています。
+
+With the v2.1 motor-position conversion ratio `32/3`, the observed TARGET motion corresponds to approximately `4533 microstep/s` and `30933 microstep/s²`. The adopted `4800 / 32000` motor values therefore slightly cover the motion capability already present in the TARGET trajectory.
+
+v2.1のMotor位置換算比 `32/3` で換算すると、観測されたTARGET運動は約 `4533 microstep/s`、`30933 microstep/s²` に相当します。このため `4800 / 32000` は、TARGET軌跡自体が持つ運動能力をわずかに上回る値として採用しています。
 
 The design objective is **not** to make the motor reach and stop at every new 100 ms TARGET point as quickly as physically possible. A theoretical analysis of that different objective produced a much higher condition near `9600 / 192000`, but such aggressive point-to-point tracking can reintroduce the discrete 100 ms update behavior as repeated acceleration/deceleration of the physical needle. It is therefore not adopted here.
 
