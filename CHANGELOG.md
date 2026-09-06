@@ -17,7 +17,7 @@ This changelog lists the formal versions and maintained parameter configurations
 - Both Original and Tuned remain available because the slower Original can appear subjectively smoother.
 
 - 確立した上位制御アーキテクチャを維持し、DRV8833モーター駆動層を1/4から1/16マイクロステップへ変更。
-- 1電気周期の位相分解能を64位置へ拡大。
+- 1電気周期の位相分解能を64位置へ拡張。
 - Original v2.1パラメータを、緩慢だが体感上より滑らかな選択肢として継続公開。
 - 維持variant `tach_v2_1_tuned` を検証済み最新パラメータへ更新。TARGET `425/160`、VIRTUAL VEL `425/160`、VIRTUAL ACC `2600/1500`、MOTOR MAX SPEED `4800`、MOTOR ACCEL `32000`。更新周期 `100 ms`、表示IIRはパルス毎 `7:1` を維持。
 - Tuned値は実車パルスログ解析・シミュレーションから導出。今回の運動層解析で、Motor値が表示TARGET軌跡に既に含まれる最大速度・最大加速度をわずかに上回ることを確認し、既に完了していた実車試験結果もその最終解釈と整合すると判断して検証済み構成へ昇格。
@@ -49,19 +49,25 @@ This changelog lists the formal versions and maintained parameter configurations
 
 - Evolved the DRV8833 motor layer to 1/16 microstepping while retaining the established pulse-processing and upper needle-control architecture.
 - Retained the original v2.1 parameters as the slower, subjectively smoother option.
-- Added `speed_v2_1_tuned_7to1`: TARGET `45/60`, MOTOR MAX SPEED `900`, MOTOR ACCEL `8000`, display filter `7:1`.
-- Added `speed_v2_1_tuned_3to1` with the same tuned control parameters and only the display-filter weighting changed from `7:1` to `3:1`.
+- Added `speed_v2_1_tuned_7to1`: TARGET `45/60`, VIRTUAL VEL `500/500`, VIRTUAL ACC `6000/6000`, MOTOR MAX SPEED `900`, MOTOR ACCEL `8000`, display filter `7:1`, control interval `50 ms`.
+- Added `speed_v2_1_tuned_3to1` with the same tuned control/motor parameters and only the display-filter weighting changed from `7:1` to `3:1`.
+- Motion-layer analysis of the real-vehicle raw log showed that the main response bottleneck is the display IIR rather than motor maximum speed. Representative acceleration MAE versus raw was about `12.7 step` with 7:1 and `6.4 step` with 3:1.
+- The maximum TARGET velocity corresponds to only about `640 microstep/s`, so the maintained motor maximum speed `900 microstep/s` already has adequate margin.
+- A TARGET-trajectory-matched motor acceleration would be around `16000 microstep/s²`, but simulation improved representative 3:1 MAE only from about `6.38` to `5.98 step`. Therefore `900/8000` remains the maintained practical motor setting and 3:1 IIR is treated as the primary response-oriented change.
+- Added public design-rationale documentation and a representative real-log-based acceleration figure under `speed_v2_1_tuned_3to1`.
 - `7:1` and `3:1` mean **previous filtered value : newest raw value**; they are not pulse division or mechanical/motor gearing ratios.
-- The tuned parameters were derived from real-vehicle logging, analysis and simulation, then checked on the vehicle. Tracking improved and no clear step loss was observed at the current test stage.
-- All three configurations remain available because the original may appear smoother and tuned 7:1 / 3:1 trade stronger smoothing against faster filter response.
+- All three configurations remain available because the Original may appear smoother and Tuned 7:1 / Tuned 3:1 trade stronger smoothing against faster response.
 
 - 確立したパルス処理・上位針制御アーキテクチャを維持し、DRV8833モーター駆動層を1/16マイクロステップへ発展。
 - 初期v2.1パラメータを、緩慢だが体感上より滑らかな選択肢として継続公開。
-- `speed_v2_1_tuned_7to1` を追加。TARGET `45/60`、MOTOR MAX SPEED `900`、MOTOR ACCEL `8000`、表示フィルタ `7:1`。
-- 同じTuned制御値で表示フィルタ重みだけ `7:1` から `3:1` にした `speed_v2_1_tuned_3to1` を追加。
-- `7:1` / `3:1` は **旧フィルタ値：新しい生値** の重み比であり、パルス分周や機械／モーター減速比ではない。
-- Tuned値は実車ログ、解析・シミュレーションから導出し実車確認済み。追従性は向上し、現時点で明確な脱調は確認されていない。
-- 初期版の方が滑らかに感じられる場合があり、Tuned 7:1 / 3:1にも平滑性と応答性の一長一短があるため、3構成すべてを公開。
+- `speed_v2_1_tuned_7to1` を追加。TARGET `45/60`、VIRTUAL VEL `500/500`、VIRTUAL ACC `6000/6000`、MOTOR MAX SPEED `900`、MOTOR ACCEL `8000`、表示フィルタ `7:1`、更新周期 `50 ms`。
+- 同じTuned制御・Motor値で表示フィルタ重みだけ `7:1` から `3:1` にした `speed_v2_1_tuned_3to1` を追加。
+- 実車Rawログを用いた運動層解析で、主要な応答ボトルネックがMotor最大速度ではなく表示IIRであることを確認。代表加速区間のRawに対するMAEは7:1で約 `12.7 step`、3:1で約 `6.4 step`。
+- TARGET最大速度をMotor換算すると約 `640 microstep/s` であり、維持値 `900 microstep/s` は既に十分な速度余裕を持つ。
+- TARGET軌跡最大加速度まで能力上合わせるなら約 `16000 microstep/s²` だが、代表3:1区間でのMAE改善は約 `6.38 -> 5.98 step` と小さいため、Motorは `900/8000` を実用維持値とし、3:1 IIRを主な応答改善と位置づける。
+- `speed_v2_1_tuned_3to1` 配下に公開読者向けの設計根拠説明と実車ログ由来代表加速Figureを追加。
+- `7:1` / `3:1` は **旧フィルタ値：新しいRaw値** の重み比であり、パルス分周や機械／モーター減速比ではない。
+- Originalの方が滑らかに感じられる場合があり、Tuned 7:1 / Tuned 3:1にも平滑性と応答性の一長一短があるため、3構成すべてを公開。
 
 ### v2.0
 
