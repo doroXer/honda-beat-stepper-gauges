@@ -11,16 +11,18 @@ This changelog lists the formal versions and maintained parameter configurations
 - Changed the DRV8833 motor layer from 1/4 to 1/16 microstepping while retaining the established upper-control architecture.
 - Increased phase resolution to 64 positions per electrical cycle.
 - Retained the original v2.1 parameter configuration as the slower, subjectively smoother option.
-- Added maintained variant `tach_v2_1_tuned` without changing the v2.1 architecture: TARGET `400/180`, VIRTUAL VEL `400/200`, VIRTUAL ACC `2000/1500`; control interval and motor layer are unchanged.
-- The tuned parameters were derived from real-vehicle logging, analysis and simulation, then checked on the vehicle. Tracking improved and no clear step loss was observed at the current test stage.
-- Both configurations remain available because the slower original can appear smoother.
+- Updated maintained variant `tach_v2_1_tuned` to the validated latest parameter set: TARGET `425/160`, VIRTUAL VEL `425/160`, VIRTUAL ACC `2600/1500`, MOTOR MAX SPEED `4800`, MOTOR ACCEL `32000`; control interval remains `100 ms` and display IIR remains pulse-by-pulse `7:1`.
+- The Tuned values were derived from real-vehicle pulse logging and simulation. The later motion-layer analysis confirmed that these motor limits slightly cover the maximum velocity/acceleration already present in the desired TARGET trajectory, and the already completed vehicle test was accepted as consistent with that final interpretation.
+- The theoretical `9600/192000` condition is retained only as a reference for a different objective—100 ms position-perfect tracking—and is not part of the maintained Tuned configuration.
+- Both Original and Tuned remain available because the slower Original can appear subjectively smoother.
 
 - 確立した上位制御アーキテクチャを維持し、DRV8833モーター駆動層を1/4から1/16マイクロステップへ変更。
 - 1電気周期の位相分解能を64位置へ拡大。
-- 初期v2.1パラメータを、緩慢だが体感上より滑らかな選択肢として継続公開。
-- v2.1の制御構造を変えず、維持variant `tach_v2_1_tuned` を追加。TARGET `400/180`、VIRTUAL VEL `400/200`、VIRTUAL ACC `2000/1500`。更新周期とモーター層は共通。
-- Tuned値は実車ログ、解析・シミュレーションから導出し実車確認済み。追従性は向上し、現時点で明確な脱調は確認されていない。
-- 初期版の方が滑らかに感じられる場合があるため両構成を公開。
+- Original v2.1パラメータを、緩慢だが体感上より滑らかな選択肢として継続公開。
+- 維持variant `tach_v2_1_tuned` を検証済み最新パラメータへ更新。TARGET `425/160`、VIRTUAL VEL `425/160`、VIRTUAL ACC `2600/1500`、MOTOR MAX SPEED `4800`、MOTOR ACCEL `32000`。更新周期 `100 ms`、表示IIRはパルス毎 `7:1` を維持。
+- Tuned値は実車パルスログ解析・シミュレーションから導出。今回の運動層解析で、Motor値が表示TARGET軌跡に既に含まれる最大速度・最大加速度をわずかに上回ることを確認し、既に完了していた実車試験結果もその最終解釈と整合すると判断して検証済み構成へ昇格。
+- `9600/192000` は100 ms位置完全追従という別目的の理論参考値としてのみ残し、維持Tuned構成には採用しない。
+- Originalの緩慢な動きの方が滑らかに感じられる場合があるため、OriginalとTunedを併存。
 
 ### v2.0
 
