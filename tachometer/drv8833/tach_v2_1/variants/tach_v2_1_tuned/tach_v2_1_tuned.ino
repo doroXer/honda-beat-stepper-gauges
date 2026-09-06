@@ -30,23 +30,22 @@ void resetDisplayStateAtPosition(float logicalPosition);
 void onTachPulse();
 
 /*
-  Honda Beat Tachometer v2.1 - analyzed parameter test
-  ホンダビート タコメーター v2.1 - 解析パラメータ実車テスト
+  Honda Beat Tachometer v2.1 - tuned
+  ホンダビート タコメーター v2.1 - Tuned
 
-  Base / ベース:
-    meter/tach/tach_v2.1/tach_v2_1/tach_v2_1.ino
+  Positioning / 位置づけ:
+    Maintained vehicle-validated parameter variant of the v2.1 architecture.
+    v2.1の制御構造を変更せず、実車ログ解析・シミュレーション・実車確認を
+    経て維持対象としたパラメータvariantです。
 
-  Purpose / 目的:
-    Validate parameter candidates derived from real-vehicle log analysis
-    and simulation without changing the v2.1 production baseline.
-    実車ログ解析とシミュレーションから導出した候補パラメータを、
-    v2.1本体を変更せず実車で検証するためのテストコードです。
-
-  Changed parameters / 変更パラメータ:
-    TARGET UP/DOWN      200/100 -> 400/180
-    VIRTUAL VEL UP/DOWN 150/150 -> 400/200
-    VIRTUAL ACC UP/DOWN 500/500 -> 2000/1500
-    Control interval    100 ms  -> 100 ms (unchanged)
+  Tuned parameters / Tuned主要値:
+    TARGET UP/DOWN       425/160 step/s
+    VIRTUAL VEL UP/DOWN  425/160 step/s
+    VIRTUAL ACC UP/DOWN  2600/1500 step/s^2
+    MOTOR MAX SPEED      4800 microstep/s
+    MOTOR ACCEL          32000 microstep/s^2
+    Control interval     100 ms
+    Display IIR          7:1 per pulse
 */
 
 const int MOTOR_STEPS = 240 * 3;
@@ -72,14 +71,14 @@ const byte DISPLAY_FILTER_NEW = 1;
 
 const unsigned long CONTROL_UPDATE_INTERVAL_US = 100000UL;
 
-const float VIRTUAL_MAX_VEL_UP_STEP_PER_SEC = 400.0f;
-const float VIRTUAL_MAX_VEL_DOWN_STEP_PER_SEC = 200.0f;
-const float VIRTUAL_ACCEL_UP_STEP_PER_SEC2 = 2000.0f;
+const float VIRTUAL_MAX_VEL_UP_STEP_PER_SEC = 425.0f;
+const float VIRTUAL_MAX_VEL_DOWN_STEP_PER_SEC = 160.0f;
+const float VIRTUAL_ACCEL_UP_STEP_PER_SEC2 = 2600.0f;
 const float VIRTUAL_ACCEL_DOWN_STEP_PER_SEC2 = 1500.0f;
 const float VIRTUAL_STOP_BAND_STEP = 5.0f;
 
-const float TARGET_STEP_MAX_UP_PER_SEC = 400.0f;
-const float TARGET_STEP_MAX_DOWN_PER_SEC = 180.0f;
+const float TARGET_STEP_MAX_UP_PER_SEC = 425.0f;
+const float TARGET_STEP_MAX_DOWN_PER_SEC = 160.0f;
 
 const bool ENABLE_OPENING_DEMO = true;
 const bool FORCE_ZERO_AFTER_OPENING = true;
@@ -119,8 +118,8 @@ const uint8_t RUN_PWM_MAX = 255;
 const uint8_t HOLD_PWM_MAX = 150;
 const uint8_t ZERO_PWM_MAX = 200;
 
-const float MOTOR_MAX_SPEED_SIXTEENTH_STEP_PER_SEC = 3600.0f;
-const float MOTOR_ACCEL_SIXTEENTH_STEP_PER_SEC2 = 9600.0f;
+const float MOTOR_MAX_SPEED_SIXTEENTH_STEP_PER_SEC = 4800.0f;
+const float MOTOR_ACCEL_SIXTEENTH_STEP_PER_SEC2 = 32000.0f;
 
 const float BLOCKING_MAX_SPEED_SIXTEENTH_STEP_PER_SEC = 16800.0f;
 const float BLOCKING_ACCEL_SIXTEENTH_STEP_PER_SEC2 = 90000.0f;
