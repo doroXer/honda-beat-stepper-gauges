@@ -6,6 +6,26 @@ This changelog lists the formal versions and maintained parameter configurations
 
 ## Tachometer / タコメーター
 
+### v3.0
+
+- Replaced pulse-by-pulse 7:1 IIR filtering with a 3-pulse moving average derived from raw-pulse periodicity analysis.
+- Changed the control interval from 100 ms to 50 ms.
+- Relaxed TARGET UP/DOWN from `425/160` to `1600/1600` logical step/s so TARGET is normally non-dominant.
+- Retained Virtual VEL `425/160` and Virtual ACC `2600/1500`.
+- Disabled STOP BAND by setting it to `0`, while retaining the code path for future evaluation.
+- Reduced Motor ACCEL from `32000` to `12000` motor-position step/s² while retaining Motor MAX SPEED `4800`.
+- Selected these values from stored raw-pulse logs, control logging and simulation, then confirmed the resulting behavior in the vehicle.
+- Missing-pulse integer-multiple correction is not included.
+
+- パルス毎7:1 IIRを、Rawパルス周期性解析に基づく3パルス移動平均へ変更。
+- 制御周期を100 msから50 msへ変更。
+- TARGET UP/DOWNを `425/160` から `1600/1600` logical step/sへ緩和し、通常動作でTARGET層が支配的にならない構成へ変更。
+- Virtual VEL `425/160`、Virtual ACC `2600/1500` は維持。
+- STOP BANDは処理自体を残しつつ値を `0` として無効化。
+- Motor MAX SPEED `4800` は維持し、Motor ACCELを `32000` から `12000` motor-position step/s²へ変更。
+- 保存済みRawログ、制御ログ、シミュレーションから値を選定し、その後実車で動作確認。
+- 整数倍判定によるパルス抜け補正は実装しない。
+
 ### v2.1
 
 - Changed the DRV8833 motor layer from 1/4 to 1/16 microstepping while retaining the established upper-control architecture.
@@ -44,6 +64,26 @@ This changelog lists the formal versions and maintained parameter configurations
 > v1.0は内部開発版のため収録していません。
 
 ## Speedometer / スピードメーター
+
+### v3.0
+
+- Replaced the tuned 3:1 IIR display filter with a 4-pulse moving average matching the stock speed-sensor periodicity.
+- Retained the 50 ms control interval.
+- Relaxed TARGET UP/DOWN from `45/60` to `1600/1600` logical step/s.
+- Aligned Virtual parameters with tachometer v3.0: VEL `425/160`, ACC `2600/1500`.
+- Disabled STOP BAND by setting it to `0`, while retaining the code path for future evaluation.
+- Retained the speedometer-specific Motor limits: MAX SPEED `900`, ACCEL `8000` motor-position step units.
+- Raw-log simulation showed that these Virtual changes do not materially worsen the physical Motor trajectory because the speedometer Motor layer is already the dominant physical limit. The resulting configuration was then validated in the vehicle.
+- Missing-pulse integer-multiple correction is not included.
+
+- Tuned 3:1 IIR表示フィルタを、純正スピードセンサの周期性に合わせた4パルス移動平均へ変更。
+- 制御周期50 msは維持。
+- TARGET UP/DOWNを `45/60` から `1600/1600` logical step/sへ緩和。
+- Virtual値をタコメーターv3.0と共通化し、VEL `425/160`、ACC `2600/1500` を採用。
+- STOP BANDは処理自体を残しつつ値を `0` として無効化。
+- スピードメーター固有のMotor値 MAX SPEED `900`、ACCEL `8000` は維持。
+- Rawログシミュレーションで、スピード側はMotor層が既に主要な物理制約であり、Virtual変更による実Motor軌跡の悪化がほぼないことを確認。その後実車で動作確認。
+- 整数倍判定によるパルス抜け補正は実装しない。
 
 ### v2.1
 
