@@ -10,6 +10,24 @@ Honda Beat (PP1) stepper-gauge projects for tachometer, speedometer, fuel gauge,
 
 `doroXer dark` は、doroXerの自動車・組込み電子工作系の活動区分です。本リポジトリでは、再現・理解に必要な実装情報を含めた実用プロジェクトを整理します。
 
+## Current public gauge generation / 現行公開世代
+
+For the DRV8833 1/16-microstep tachometer and speedometer, **v3.0 is the current public version**. It was derived from stored real-vehicle raw logs, simulation, and subsequent vehicle validation.
+
+DRV8833・1/16マイクロステップ駆動のタコメーター／スピードメーターについては、**v3.0を現行公開版**とします。保存済み実車Rawログ、シミュレーション、その後の実車確認を経て公開へ昇格した版です。
+
+Common v3.0 upper-control values are:
+
+- Control interval: `50 ms`
+- TARGET UP/DOWN: `1600/1600`
+- Virtual VEL UP/DOWN: `425/160`
+- Virtual ACC UP/DOWN: `2600/1500`
+- STOP BAND: `0`
+
+Input filtering and Motor limits remain gauge-specific: tachometer = 3-pulse moving average + Motor `4800/12000`; speedometer = 4-pulse moving average + Motor `900/8000`.
+
+v3.0の上位制御は、制御周期 `50 ms`、TARGET `1600/1600`、Virtual VEL `425/160`、Virtual ACC `2600/1500`、STOP BAND `0` を共通化しています。入力フィルタとMotor値はメーター固有で、タコは3パルス移動平均＋Motor `4800/12000`、スピードは4パルス移動平均＋Motor `900/8000` です。
+
 ## Included gauges / 収録メーター
 
 ### Tachometer / タコメーター
@@ -18,11 +36,16 @@ Honda Beat (PP1) stepper-gauge projects for tachometer, speedometer, fuel gauge,
 |---|---|---|
 | v1.1 | X27.168 + SwitecX25 | Stable library-based implementation / ライブラリ駆動の安定版 |
 | v2.0 | X27.168 + DRV8833, 1/4 microstep | Stable microstep baseline / 安定性重視のマイクロステップ基準版 |
-| v2.1 | X27.168 + DRV8833, 1/16 microstep | One software generation with original + tuned parameter configurations / 初期版＋Tuned版を持つ同一ソフト世代 |
+| v2.1 | X27.168 + DRV8833, 1/16 microstep | Previous generation with Original + Tuned configurations / 初期版＋Tuned版を持つ従来世代 |
+| **v3.0** | X27.168 + DRV8833, 1/16 microstep | **Current vehicle-validated public version / 実車確認済み現行公開版** |
 
-v2.1 keeps the original slower parameter set and also publishes a tuned configuration derived from real-vehicle logging, analysis and simulation. The tuned configuration improves tracking and no clear step loss has been observed in the current vehicle test, while the original may appear smoother because of its slower movement. Both are intentionally retained.
+v3.0 replaces the pulse-by-pulse IIR path with a 3-pulse moving average, changes the control interval to 50 ms, relaxes TARGET to 1600/1600, disables STOP BAND with value 0, and uses Motor `4800/12000`. See `tachometer/drv8833/tach_v3_0/README.md`.
 
-v2.1では初期の緩慢なパラメータセットに加え、実車ログ、解析・シミュレーションから導出したTuned構成を公開します。Tuned版は追従性が向上し、現時点で明確な脱調は確認されていません。一方、初期版の緩慢な動きの方が滑らかに感じられる場合があるため、両方を意図的に残します。
+v3.0ではパルス毎IIRを3パルス移動平均へ変更し、制御周期50 ms、TARGET 1600/1600、STOP BAND 0、Motor `4800/12000` としています。詳細は `tachometer/drv8833/tach_v3_0/README.md` を参照してください。
+
+v2.1 remains available as the previous generation because its Original and Tuned configurations document the earlier control architecture and tuning path.
+
+v2.1は、旧制御アーキテクチャとOriginal／Tunedの調整経緯を残す従来世代として引き続き収録します。
 
 v1.0 was an internal development version and is not included in this repository. The public-facing v1 series starts with v1.1.
 
@@ -34,15 +57,16 @@ v1.0は内部開発版のため収録しません。V1系の公開対象はv1.1�
 |---|---|---|
 | v1.1 | X27.168 + SwitecX25 | Stable library-based implementation / ライブラリ駆動の安定版 |
 | v2.0 | X27.168 + DRV8833, 1/4 microstep | Stable microstep baseline / 安定性重視のマイクロステップ基準版 |
-| v2.1 | X27.168 + DRV8833, 1/16 microstep | One software generation with original + tuned 7:1 + tuned 3:1 parameter configurations / 初期版＋Tuned 7:1＋Tuned 3:1を持つ同一ソフト世代 |
+| v2.1 | X27.168 + DRV8833, 1/16 microstep | Previous generation with Original + Tuned 7:1 + Tuned 3:1 configurations / 初期版＋Tuned 7:1＋Tuned 3:1を持つ従来世代 |
+| **v3.0** | X27.168 + DRV8833, 1/16 microstep | **Current vehicle-validated public version / 実車確認済み現行公開版** |
 
-The tuned speedometer configurations improve tracking and no clear step loss has been observed in the current vehicle tests. The original is retained because its slower movement may appear smoother. Tuned 7:1 and Tuned 3:1 are also both retained because stronger smoothing and faster filter response are a trade-off rather than a simple upgrade path.
+v3.0 replaces the 3:1 IIR with a 4-pulse moving average, relaxes TARGET to 1600/1600, aligns the Virtual layer with tachometer v3.0, disables STOP BAND with value 0, and retains speedometer-specific Motor `900/8000`. See `speedometer/drv8833/speed_v3_0/README.md`.
 
-スピードメーターのTuned構成は追従性が向上し、現時点で明確な脱調は確認されていません。初期版は緩慢な動きの方が滑らかに感じられる場合があるため残します。またTuned 7:1とTuned 3:1も、平滑性とフィルタ応答性の一長一短があるため両方を残します。
+v3.0では3:1 IIRを4パルス移動平均へ変更し、TARGET 1600/1600、Virtual層をタコv3.0と共通化、STOP BAND 0とし、Motorはスピード固有の `900/8000` を維持しています。詳細は `speedometer/drv8833/speed_v3_0/README.md` を参照してください。
 
-In the speedometer variant names, `7:1` and `3:1` mean the weighting ratio of **previous filtered value : newest raw value**. They do not mean pulse division, mechanical gearing, or motor-position scaling.
+v2.1 remains available because its Original, Tuned 7:1 and Tuned 3:1 configurations document the previous tuning trade-offs.
 
-スピードメーターの `7:1` / `3:1` は **旧フィルタ値：新しい生値** の表示フィルタ重み比を意味します。パルス分周、機械減速比、モーター位置倍率ではありません。
+v2.1は、Original、Tuned 7:1、Tuned 3:1で検討した従来の平滑性・応答性のトレードオフを残す世代として引き続き収録します。
 
 v1.0 was an internal development version and is not included in this repository. The public-facing v1 series starts with v1.1.
 
@@ -60,9 +84,9 @@ Version numbers represent meaningful software-architecture or implementation cha
 
 バージョン番号は、ソフトウェア構造や実装に意味のある変更がある場合に使用します。同じ制御構造でパラメータだけが異なる場合はバージョン番号を上げず、同一バージョン内の `variants/` として管理します。
 
-This is why the current tuned tachometer and speedometer configurations remain v2.1 rather than being renamed v2.2.
+v3.0 is a new version because the input filtering, control interval/role of TARGET, STOP BAND behavior, and motion-layer design were reorganized rather than merely retuned.
 
-今回のタコ／スピードのTuned構成も、コード構造の新規性ではなくパラメータ差であるためv2.2とはせずv2.1内に残します。
+v3.0は単なるパラメータ変更ではなく、入力フィルタ、制御周期とTARGET層の役割、STOP BANDの扱い、運動層の設計を再整理したため、新バージョンとしています。
 
 ## Vehicle pulse input conditioning / 車両パルス入力処理
 
@@ -109,6 +133,9 @@ tachometer/
         README.md
         tach_v2_1_tuned/
           tach_v2_1_tuned.ino
+    tach_v3_0/
+      README.md
+      tach_v3_0.ino
 speedometer/
   switecx25/
     speed_v1_1/
@@ -125,6 +152,9 @@ speedometer/
           speed_v2_1_tuned_7to1.ino
         speed_v2_1_tuned_3to1/
           speed_v2_1_tuned_3to1.ino
+    speed_v3_0/
+      README.md
+      speed_v3_0.ino
 fuel-coolant/
   fuel_temp_v1_0/
     fuel_temp_v1_0.ino
