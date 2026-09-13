@@ -9,8 +9,9 @@ This document explains the intended role of each formal gauge version included i
 | Version | Drive method / 駆動方式 | Intended role / 位置づけ |
 |---|---|---|
 | v1.1 | X27.168 + SwitecX25 | Simple, proven library-based implementation / シンプルで実績のあるライブラリ駆動版 |
-| v2.0 | X27.168 + DRV8833, 1/4 microstep | Stable microstep baseline; current stability-oriented choice / 安定性を重視したマイクロステップ基準版 |
-| v2.1 | X27.168 + DRV8833, 1/16 microstep | Higher smoothness, but requires careful vehicle-specific validation / より高い滑らかさを狙う版。実車ごとの十分な検証が必要 |
+| v2.0 | X27.168 + DRV8833, 1/4 microstep | Stable microstep baseline / 安定性を重視したマイクロステップ基準版 |
+| v2.1 | X27.168 + DRV8833, 1/16 microstep | Previous 1/16 generation with original and tuned parameter variants / 初期版・Tuned版を持つ従来1/16世代 |
+| v3.0 | X27.168 + DRV8833, 1/16 microstep | Current vehicle-validated redesign using pulse-period moving average, relaxed TARGET and revised motion layering / 周期移動平均・TARGET緩和・運動層再整理を行った実車確認済み現行版 |
 
 ### v1.1
 
@@ -30,15 +31,29 @@ v2.0は、確立した上位制御アーキテクチャを維持しつつ、Swit
 
 ### v2.1 — 1/16 microstep / 1/16マイクロステップ
 
-v2.1 increases microstep resolution to improve visual smoothness. During development, finer microstepping showed greater sensitivity to step-position drift under real driving conditions than the 1/4-microstep baseline. For that reason, v2.1 should be treated as an advanced option that requires validation on the actual gauge, driver module, power supply, and vehicle.
+v2.1 is the previous 1/16-microstep generation. It remains available because it documents the earlier control architecture and its tuned parameter variants.
 
-v2.1はマイクロステップ分解能を上げ、見た目の滑らかさを向上させる版です。開発評価では、細かいマイクロステップほど1/4マイクロステップ版に比べ、実走行時の位置ずれに対する感度が高い傾向が確認されています。そのためv2.1は、実際のメーター、ドライバモジュール、電源、車両で十分に評価した上で使用する高度な選択肢として位置づけます。
+v2.1は従来の1/16マイクロステップ世代です。旧制御アーキテクチャとTunedパラメータvariantを残す意味があるため、引き続き収録します。
+
+### v3.0 — current public version / 現行公開版
+
+v3.0 keeps 1/16-microstep DRV8833 drive but reorganizes the signal and motion-control responsibilities using saved real-vehicle raw logs, simulation, and vehicle validation.
+
+Both tachometer and speedometer use a 50 ms control interval, TARGET `1600/1600`, Virtual VEL `425/160`, Virtual ACC `2600/1500`, and STOP BAND `0`. Their Motor limits remain gauge-specific.
+
+The tachometer uses a 3-pulse moving average and Motor `4800/12000`. The speedometer uses a 4-pulse moving average and Motor `900/8000`.
+
+v3.0はDRV8833・1/16マイクロステップ駆動を維持しつつ、保存済み実車Rawログ、シミュレーション、実車確認を基に信号処理と運動制御の役割を再整理した版です。
+
+タコ・スピード共通で、制御周期50 ms、TARGET `1600/1600`、Virtual VEL `425/160`、Virtual ACC `2600/1500`、STOP BAND `0` を採用しています。Motor値は各メーター固有です。
+
+タコは3パルス移動平均＋Motor `4800/12000`、スピードは4パルス移動平均＋Motor `900/8000` です。
 
 ## Why 1/8-microstep test versions are not included / 1/8マイクロステップ試験版を収録しない理由
 
-1/8-microstep code was used during development as an experimental comparison. It does not provide a sufficiently distinct release role between the stable 1/4 baseline and the smoother 1/16 version, so it remains only in the private development archive.
+1/8-microstep code was used during development as an experimental comparison. It does not provide a sufficiently distinct release role between the stable 1/4 baseline and the 1/16 versions, so it remains only in the private development archive.
 
-1/8マイクロステップ版は開発中の比較試験として使用しました。安定性重視の1/4版と滑らかさ重視の1/16版の間で、公開版として独立した役割が十分明確ではないため、Private開発履歴のみに残します。
+1/8マイクロステップ版は開発中の比較試験として使用しました。安定性重視の1/4版と1/16版の間で、公開版として独立した役割が十分明確ではないため、Private開発履歴のみに残します。
 
 ## Fuel and coolant temperature / 燃料計・水温計
 
